@@ -6,7 +6,7 @@ In the same folder as the project file, put a file named `simple-server.json`.
 
 ```json
 {
-    "port": <port number>,
-    "root": <folder, relative to config file>
+    "port": "<port number>",
+    "root": "<folder, relative to config file>"
 }
 ```
