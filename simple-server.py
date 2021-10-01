@@ -7,6 +7,12 @@ from threading import Thread, Event
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
+
+def plugin_unloaded():
+	# Shut down all listening servers when the plugin reloads
+	for window in sublime.windows():
+		window.run_command("simple_server", {"cmd": "stop"})
+
 def readValue(source, key, default = None):
 	if key in source:
 		return source[key]
