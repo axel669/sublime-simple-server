@@ -57,6 +57,11 @@ class ViewTracker(sublime_plugin.EventListener):
 	parents = {}
 	windows = {}
 	def on_activated(self, view):
+		# Some views aren't attached to windows because they don't represent
+		# files.
+		if view.window() is None:
+			return
+
 		wid = view.window().id()
 		if wid in self.windows and self.windows[wid] != False:
 			view.set_status(
