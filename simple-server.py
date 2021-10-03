@@ -7,6 +7,12 @@ from threading import Thread, Event
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
+
+def plugin_unloaded():
+	# Shut down all listening servers when the plugin reloads
+	for window in sublime.windows():
+		window.run_command("simple_server", {"cmd": "stop"})
+
 def readValue(source, key, default = None):
 	if key in source:
 		return source[key]
@@ -51,6 +57,11 @@ class ViewTracker(sublime_plugin.EventListener):
 	parents = {}
 	windows = {}
 	def on_activated(self, view):
+		# Some views aren't attached to windows because they don't represent
+		# files.
+		if view.window() is None:
+			return
+
 		wid = view.window().id()
 		if wid in self.windows and self.windows[wid] != False:
 			view.set_status(
@@ -63,28 +74,35 @@ class ViewTracker(sublime_plugin.EventListener):
 class SimpleServer(sublime_plugin.WindowCommand):
 	def __init__(self, window):
 		super().__init__(window)
+
+		project_data = self.window.project_data()
 		project_file = self.window.project_file_name()
 
-		if project_file == None:
-			self.root = None
+		self.root = None
+
+		# If there is no project, but there is at least one folder open, use
+		# the first folder in the sidebar as the root
+		if project_file is not None:
+			self.root = os.path.dirname(self.window.project_file_name())
+		elif project_data is not None and "folders" in project_data:
+			self.root = project_data["folders"][0]["path"]
+
+		if self.root == None:
 			return
 
-		self.root = os.path.dirname(self.window.project_file_name())
+		self.settingsPath = os.path.join(self.root, "simple-server.json")
 		self.thread = None
 		ViewTracker.windows[window.id()] = False
 
 	def is_enabled(self, *args):
-		return self.root != None
+		return self.root is not None and os.path.exists(self.settingsPath)
 
 	def start(self, **args):
 		if self.thread != None:
 			return
 
-		settingsPath = os.path.join(self.root, "simple-server.json")
-
-		f = open(settingsPath)
-		settings = json.load(f)
-		f.close()
+		with open(self.settingsPath) as handle:
+			settings = json.load(handle)
 
 		directory = readValue(settings, "root", ".")
 		port = readValue(settings, "port", 1337)
