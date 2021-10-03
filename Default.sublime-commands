@@ -1,16 +1,10 @@
 [
 	{
 		"caption": "Simple Server: Start",
-		"command": "simple_server",
-		"args": {
-			"cmd": "start"
-		}
+		"command": "simple_server_start"
 	},
 	{
 		"caption": "Simple Server: Stop",
-		"command": "simple_server",
-		"args": {
-			"cmd": "stop"
-		}
+		"command": "simple_server_stop"
 	}
 ]
